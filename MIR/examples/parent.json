@@ -1,0 +1,65 @@
+{
+  "mir_version": "1",
+  "manifest_hash": "sha256:51c4d15ab06179fa080b34c3215cbe9d7a3fb3c5e9fcc2a82ee676dfab62055e",
+  "base": {
+    "hash": "sha256:e902954973edd6e3fa7b5e4a276cf50743701b5a752f8c43e466a4f96362bfa6",
+    "location": "examples/base/checkpoint",
+    "license": "example-only"
+  },
+  "intervention": {
+    "type": "harness",
+    "payload_hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34"
+  },
+  "claimant": {
+    "operator": "operator-a",
+    "funding_source": "example-fund-a"
+  },
+  "claim": {
+    "behavior": "mean_tokens",
+    "distribution": "math500",
+    "direction": "increase",
+    "threshold": -1.0,
+    "scoring_metrics": [
+      "mean_tokens"
+    ]
+  },
+  "falsifier": {
+    "command": "python3 examples/falsify_example.py examples/parent.json",
+    "returns": "boolean"
+  },
+  "invariants": [
+    {
+      "property": "math_accuracy",
+      "measurement": "math500/exact",
+      "metric": "math_accuracy",
+      "direction": "floor",
+      "bound": 0.0
+    }
+  ],
+  "harness": {
+    "hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+    "location": "examples/harness"
+  },
+  "runs": [
+    {
+      "operator": "operator-a",
+      "funding_source": "example-fund-a",
+      "cost": 0.0,
+      "wall_time_s": 1800.0,
+      "started_at": "2026-11-12T00:00:00Z",
+      "harness_hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+      "base_hash": "sha256:e902954973edd6e3fa7b5e4a276cf50743701b5a752f8c43e466a4f96362bfa6",
+      "intervention_hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+      "result": {
+        "n_units": 500,
+        "samples_per_unit": 4,
+        "mean_tokens": 0.0,
+        "math_accuracy": 0.0
+      }
+    }
+  ],
+  "lineage": [],
+  "supersedes": null,
+  "status": "draft",
+  "id": "sha256:6d13242c84e4f0f7756b019eecc12d906176ee8b0d5339038b79eef6ca96a568"
+}

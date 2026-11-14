@@ -1,0 +1,76 @@
+{
+  "mir_version": "1",
+  "manifest_hash": "sha256:51c4d15ab06179fa080b34c3215cbe9d7a3fb3c5e9fcc2a82ee676dfab62055e",
+  "base": {
+    "hash": "sha256:e902954973edd6e3fa7b5e4a276cf50743701b5a752f8c43e466a4f96362bfa6",
+    "location": "examples/base/checkpoint",
+    "license": "example-only"
+  },
+  "harness": {
+    "hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+    "location": "examples/harness"
+  },
+  "lineage": [
+    "sha256:6d13242c84e4f0f7756b019eecc12d906176ee8b0d5339038b79eef6ca96a568"
+  ],
+  "supersedes": null,
+  "status": "draft",
+  "falsifier": {
+    "command": "python3 examples/falsify_example.py examples/terse-run.json",
+    "returns": "boolean"
+  },
+  "intervention": {
+    "type": "weights",
+    "payload_hash": "sha256:5a07b66aa1ae3f73009385b23ff8e01fda36a28d09d4350334ab2835315fec75"
+  },
+  "claimant": {
+    "operator": "operator-b",
+    "funding_source": "example-fund-b"
+  },
+  "claim": {
+    "behavior": "mean_tokens",
+    "distribution": "instruct-set",
+    "direction": "decrease",
+    "threshold": 0.9,
+    "scoring_metrics": [
+      "mean_tokens",
+      "task_correctness"
+    ]
+  },
+  "invariants": [
+    {
+      "property": "mean_tokens",
+      "measurement": "instruct-set/mean-tokens",
+      "metric": "mean_tokens",
+      "direction": "delta",
+      "bound": 0.1
+    },
+    {
+      "property": "task_correctness",
+      "measurement": "instruct-set/correct",
+      "metric": "task_correctness",
+      "direction": "floor",
+      "bound": 0.0
+    }
+  ],
+  "runs": [
+    {
+      "operator": "operator-b",
+      "funding_source": "example-fund-b",
+      "cost": 4.0,
+      "wall_time_s": 14400.0,
+      "started_at": "2026-11-08T00:00:00Z",
+      "harness_hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+      "base_hash": "sha256:e902954973edd6e3fa7b5e4a276cf50743701b5a752f8c43e466a4f96362bfa6",
+      "intervention_hash": "sha256:5a07b66aa1ae3f73009385b23ff8e01fda36a28d09d4350334ab2835315fec75",
+      "result": {
+        "n_units": 500,
+        "samples_per_unit": 4,
+        "mean_tokens": 0.62,
+        "math_accuracy": 0.23,
+        "gsm8k_accuracy": 0.0
+      }
+    }
+  ],
+  "id": "sha256:ea1e8100f1402a74e1777e6062fd93341de15f1656088903d8e8d4e1c2638dfe"
+}

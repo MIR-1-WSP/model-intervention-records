@@ -1,0 +1,8 @@
+{
+  "kind": "mir-locator",
+  "media_type": "application/octet-stream",
+  "note": "full checkpoint, not stored; HEAD the url for x-linked-etag",
+  "sha256": "fd1e42acdd118ac1b300d37500fd2885e75f5a09de3a33010d802bf7f737b553",
+  "size": 1746943032,
+  "url": "https://huggingface.co/RikiyaT/Qwen3.5-0.8B-weight-space-programming/resolve/main/model.safetensors-00001-of-00001.safetensors"
+}
