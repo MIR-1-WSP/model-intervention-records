@@ -1,0 +1,10 @@
+{
+  "mir_version": "1",
+  "name": "example-registry",
+  "parameters": {
+    "challenge_window_days": 30,
+    "bond_size": 1000,
+    "min_independent_replications": 2,
+    "benchmark_rotation_days": 180
+  }
+}
