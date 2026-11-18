@@ -4,13 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Model Intervention Records — a conformance test for weight-space claims</title>
-<meta name="description" content="MIR-1 is a record format and a mechanical conformance test for claims that an intervention changed a language model's behavior: an executable falsifier, invariants outside the claimed score, and content-addressed lineage. Two implementations, Python and Go, agree byte for byte.">
+<meta name="description" content="MIR-1 is a record format and a mechanical conformance test for claims that an intervention changed a language model's behavior: an executable falsifier, invariants outside the claimed score, and content-addressed lineage. Eleven verdicts, no aggregate score. Two implementations, Python and Go, agree byte for byte.">
 <link rel="canonical" href="https://mir-1-wsp.github.io/model-intervention-records/">
+<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d10" media="(prefers-color-scheme: dark)">
+<meta name="google-site-verification" content="V02uuZ9WBSsqjf7CufnRIYgDgpaTlJ0RxO-ykCWHOjU" />
+
 <meta property="og:type" content="article">
 <meta property="og:title" content="Model Intervention Records">
 <meta property="og:description" content="A conformance test for weight-space claims. Eleven verdicts, no aggregate score.">
 <meta property="og:url" content="https://mir-1-wsp.github.io/model-intervention-records/">
 <meta name="twitter:card" content="summary">
+
 <!-- Highwire tags: what Google Scholar reads to build a citation record. -->
 <meta name="citation_title" content="Model Intervention Records: A Conformance Test for Weight-Space Claims">
 <meta name="citation_author" content="MIR-1 contributors">
@@ -18,74 +23,108 @@
 <meta name="citation_pdf_url" content="https://mir-1-wsp.github.io/model-intervention-records/MIR/paper/mir-1.pdf">
 <meta name="citation_abstract_html_url" content="https://mir-1-wsp.github.io/model-intervention-records/">
 <meta name="citation_language" content="en">
+
 <style>
-  :root { color-scheme: light dark; }
-  body { max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem;
-         font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  h1 { font-size: 1.7rem; line-height: 1.25; margin-bottom: .25rem; }
-  .sub { color: #666; margin-top: 0; }
-  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
-  pre { overflow-x: auto; padding: .8rem 1rem; background: #f4f4f4; border-radius: 6px; }
-  @media (prefers-color-scheme: dark) { pre { background: #1e1e1e; } .sub { color: #aaa; } }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #ddd; vertical-align: top; }
-  footer { margin-top: 3rem; color: #666; font-size: .9rem; }
+  :root {
+    color-scheme: light dark;
+    --ink: #1a1a1c; --ink-soft: #55555c; --ink-faint: #7a7a83;
+    --bg: #f7f7f5; --panel: #ffffff; --line: #e2e2dc;
+    --accent: #4640c8; --accent-soft: #ecebfa;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
+    --radius: 14px;
+    --wrap: 70rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #ececf0; --ink-soft: #a9a9b4; --ink-faint: #85858f;
+      --bg: #0d0d10; --panel: #15151a; --line: #2a2a32;
+      --accent: #a9a4ff; --accent-soft: #1c1b2e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 var(--sans);
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--accent-soft); }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 clamp(1.1rem, 4vw, 2.5rem); }
+  .skip { position: absolute; left: -999px; top: 0; background: var(--panel); padding: .6rem 1rem; }
+  .skip:focus { left: 1rem; top: 1rem; z-index: 9; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 5;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+  }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 3.4rem; gap: 1rem; }
+  .brand { font-family: var(--mono); font-size: .82rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+  .brand i { color: var(--accent); font-style: normal; }
+  nav a { font-size: .87rem; color: var(--ink-soft); text-decoration: none; margin-left: 1.25rem; }
+  nav a:hover { color: var(--ink); }
+
+  .hero { padding: clamp(3rem, 9vw, 6rem) 0 clamp(2rem, 5vw, 3.5rem); }
+  .kicker { font-family: var(--mono); font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 1.2rem; }
+  h1 { font-size: clamp(2.4rem, 7vw, 4.2rem); line-height: .98; letter-spacing: -.03em; margin: 0 0 1.4rem; font-weight: 650; }
+  .lede { font-size: clamp(1.05rem, 2.2vw, 1.28rem); line-height: 1.6; color: var(--ink-soft); max-width: 43rem; margin: 0 0 2rem; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1.4rem; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .62rem 1.05rem; border-radius: 999px; text-decoration: none;
+    font-size: .9rem; font-weight: 550; border: 1px solid var(--line); background: var(--panel);
+  }
+  .btn:hover { border-color: var(--accent); color: var(--ink); }
+  .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn.primary:hover { opacity: .88; color: var(--bg); }
+  .meta { font-family: var(--mono); font-size: .74rem; color: var(--ink-faint); letter-spacing: .02em; margin: 0; }
+
+  section { padding: clamp(2.6rem, 6vw, 4.2rem) 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(1.3rem, 3vw, 1.75rem); letter-spacing: -.015em; margin: 0 0 .5rem; font-weight: 600; }
+  h2 + p.sub { color: var(--ink-soft); margin: 0 0 2rem; max-width: 46rem; }
+  p { max-width: 44rem; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: 2rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.35rem 1.3rem; }
+  .card h3 { margin: 0 0 .5rem; font-size: 1rem; letter-spacing: -.005em; }
+  .card p { margin: 0; font-size: .945rem; color: var(--ink-soft); }
+  .card .num { font-family: var(--mono); font-size: .72rem; color: var(--accent); letter-spacing: .1em; display: block; margin-bottom: .9rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin: 2rem 0 1.6rem; }
+  .stat { background: var(--panel); padding: 1.4rem 1.3rem; }
+  .stat b { display: block; font-size: 2.1rem; line-height: 1; letter-spacing: -.03em; font-weight: 600; }
+  .stat span { display: block; font-size: .8rem; color: var(--ink-soft); margin-top: .5rem; }
+
+  pre {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 1.1rem 1.2rem; overflow-x: auto; margin: 1.2rem 0;
+    font-family: var(--mono); font-size: .84rem; line-height: 1.7; color: var(--ink);
+  }
+  code { font-family: var(--mono); font-size: .87em; }
+  p code, li code { background: var(--accent-soft); padding: .12em .38em; border-radius: 5px; }
+  .note { font-size: .9rem; color: var(--ink-soft); border-left: 2px solid var(--accent); padding-left: .9rem; margin: 1.2rem 0 0; }
+
+  .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: clamp(1.5rem, 4vw, 3rem); }
+  ul.plain { list-style: none; padding: 0; margin: 1.2rem 0 0; }
+  ul.plain li { padding: .55rem 0; border-bottom: 1px solid var(--line); font-size: .945rem; color: var(--ink-soft); display: flex; gap: .8rem; }
+  ul.plain li:last-child { border-bottom: 0; }
+  ul.plain li::before { content: "—"; color: var(--ink-faint); }
+  ul.links { list-style: none; padding: 0; margin: 1.2rem 0 0; }
+  ul.links li { padding: .55rem 0; border-bottom: 1px solid var(--line); font-size: .945rem; }
+  ul.links li:last-child { border-bottom: 0; }
+  ul.links a { text-decoration: none; font-weight: 500; }
+  ul.links a:hover { text-decoration: underline; }
+  ul.links small { color: var(--ink-faint); display: block; font-size: .8rem; font-weight: 400; }
+
+  footer { border-top: 1px solid var(--line); padding: 2.4rem 0 3.4rem; color: var(--ink-faint); font-size: .85rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; }
+  footer p { margin: 0; max-width: none; }
 </style>
-</head>
-<body>
-
-<h1>Model Intervention Records</h1>
-<p class="sub">A conformance test for claims made in weight-space programming.</p>
-
-<p>Claims that an intervention changed a model's behavior are not comparable.
-Two reports can both be accurate and still disagree about what happened, because
-neither record states what was required not to change. MIR-1 specifies the
-fields such a claim must carry, and a mechanical test anyone may run on them
-without permission: an executable falsifier, an invariant set with at least one
-metric outside the claim's own scoring function, and content-addressed lineage to
-a base checkpoint.</p>
-
-<p>The test reports eleven individual verdicts and no aggregate score. A
-companion extends the <code>weights</code> payload with a composable Weight
-Patch and five further checks; another adds four report-only qualifiers. A
-published intervention is re-recorded as the worked example, and it fails
-exactly one check: no run states a cost.</p>
-
-<table>
-  <tr><th>Read</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1-spec.md">The specification</a></td></tr>
-  <tr><th>Paper</th><td><a href="MIR/paper/mir-1.pdf">10 pages, PDF</a> · <a href="MIR/paper/mir-1.tex">LaTeX source</a></td></tr>
-  <tr><th>Addendum</th><td><a href="MIR/paper/mir-1-addendum.pdf">3 pages, PDF</a> — what changed after version 1.0</td></tr>
-  <tr><th>Patches</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1.1-Patch.md">MIR-1.1 — composable weight interventions</a></td></tr>
-  <tr><th>Qualifiers</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1.2-Qualifiers.md">MIR-1.2 — record qualifiers</a></td></tr>
-  <tr><th>Worked example</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR/records/MIR-R1.json">MIR-R1.json</a>, one check failing</td></tr>
-  <tr><th>Source</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records">github.com/MIR-1-WSP/model-intervention-records</a></td></tr>
-</table>
-
-<h2>Check a record</h2>
-<p>The validator runs on Python 3.8 or later with no third-party dependencies.
-Nothing needs to be installed.</p>
-<pre>git clone https://github.com/MIR-1-WSP/model-intervention-records
-cd model-intervention-records/MIR
-python3 validate.py records/MIR-R1.json
-python3 ci/check.py</pre>
-<p>The first command ends in <code>RESULT: FAIL (1 of 11)</code>: the failure is
-cost disclosure, and it is the paper's subject rather than a defect in the
-example. The second runs every expected answer, including the ones that must
-fail.</p>
-
-<h2>What it does not do</h2>
-<p>It does not verify that a claim is true, and it does not report importance,
-novelty, evaluation quality, operator reputation, model safety, or desirability.
-It checks that a claim is stated in a form another party can check. Invariant
-bounds are declared, not evaluated. Conformance is permissionless: there is no
-certification authority and no mark to license.</p>
-
-<footer>
-  <p>Cite as: MIR-1 contributors, <em>Model Intervention Records: A Conformance
-  Test for Weight-Space Claims</em>, version 1.0, test suite 1.7.0, 2026.
-  <a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/CITATION.cff">CITATION.cff</a>.
-  Text CC BY 4.0, code Apache-2.0.</p>
-</footer>
 
 <script type="application/ld+json">
 {
@@ -101,5 +140,143 @@ certification authority and no mark to license.</p>
   "url": "https://mir-1-wsp.github.io/model-intervention-records/"
 }
 </script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap bar">
+    <span class="brand">MIR<i>·</i>1</span>
+    <nav aria-label="Sections">
+      <a href="#checks">The test</a>
+      <a href="#run">Run it</a>
+      <a href="#cite">Cite</a>
+      <a href="https://github.com/MIR-1-WSP/model-intervention-records">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap">
+
+    <div class="hero">
+      <p class="kicker">Record format · conformance test</p>
+      <h1>Model Intervention<br>Records</h1>
+      <p class="lede">Claims that an intervention changed a model's behavior are not
+      comparable. Two reports can both be accurate and still disagree about what
+      happened, because neither record states what was required <strong>not</strong> to
+      change. MIR-1 specifies the fields such a claim must carry, and a mechanical test
+      anyone may run on them without permission.</p>
+      <div class="actions">
+        <a class="btn primary" href="MIR/paper/mir-1.pdf">Read the paper — 10 pages</a>
+        <a class="btn" href="MIR/paper/mir-1-addendum.pdf">Addendum — 3 pages</a>
+        <a class="btn" href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1-spec.md">Specification</a>
+      </div>
+      <p class="meta">Version 1.0 · test suite 1.7.0 · text CC BY 4.0 · code Apache-2.0</p>
+    </div>
+
+    <section id="checks">
+      <h2>Three fields a report usually lacks</h2>
+      <p class="sub">Each is checkable by a program that has never seen the intervention.</p>
+      <div class="cards">
+        <article class="card">
+          <span class="num">01</span>
+          <h3>An executable falsifier</h3>
+          <p>A program that recomputes the claim from the published observations and
+          returns a boolean. The record does not ask to be believed; it asks to be run.</p>
+        </article>
+        <article class="card">
+          <span class="num">02</span>
+          <h3>Invariants outside the score</h3>
+          <p>At least one metric that the claim's own scoring function cannot see. A
+          success that damaged something else gets a place to appear.</p>
+        </article>
+        <article class="card">
+          <span class="num">03</span>
+          <h3>Lineage by content address</h3>
+          <p>The base checkpoint is named by its bytes, so a record states the weights it
+          started from rather than a model's name and a date.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Eleven verdicts, no aggregate</h2>
+      <p class="sub">An aggregate is optimized rather than satisfied, and a score that can
+      be optimized by damaging an unmeasured property reproduces the problem one level
+      up. A record that carries a weight patch is measured by five further checks, reported
+      in a separate block and never merged into the eleven.</p>
+      <div class="stats">
+        <div class="stat"><b>11</b><span>checks on a record</span></div>
+        <div class="stat"><b>5</b><span>on a weight patch, separate</span></div>
+        <div class="stat"><b>4</b><span>derived qualifiers</span></div>
+        <div class="stat"><b>0</b><span>aggregate score</span></div>
+      </div>
+      <p>The worked example in the repository is a published intervention re-recorded
+      under the format. It fails exactly one check: no run states a cost. That failure is
+      the paper's subject, and it is reported rather than repaired.</p>
+    </section>
+
+    <section id="run">
+      <h2>Check a record</h2>
+      <p class="sub">Python 3.8 or later, no third-party dependencies, nothing to install.</p>
+<pre><code>git clone https://github.com/MIR-1-WSP/model-intervention-records
+cd model-intervention-records/MIR
+python3 validate.py records/MIR-R1.json   # 10 of 11; C-07 is the point
+python3 ci/check.py                       # every expected answer, 21 of 21</code></pre>
+      <p class="note">The second command asserts the answers that must fail as well as the
+      ones that must pass, and runs both implementations against each other. They are
+      written from the same text in Python and Go, share no code, and agree byte for byte
+      on every record, every mutation, and 400 random documents.</p>
+    </section>
+
+    <section>
+      <div class="split">
+        <div>
+          <h2>What it does not do</h2>
+          <ul class="plain">
+            <li>Verify that a claim is true</li>
+            <li>Assess importance, novelty, or safety</li>
+            <li>Rate an operator or a paper</li>
+            <li>Evaluate an invariant bound, which is declared</li>
+            <li>Certify anything; conformance is permissionless</li>
+          </ul>
+        </div>
+        <div>
+          <h2>Read more</h2>
+          <ul class="links">
+            <li><a href="MIR/paper/mir-1.pdf">The paper</a><small>10 pages, PDF</small></li>
+            <li><a href="MIR/paper/mir-1-addendum.pdf">The addendum</a><small>what changed after publication</small></li>
+            <li><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1.1-Patch.md">Weight patches</a><small>MIR-1.1 — a composable payload</small></li>
+            <li><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1.2-Qualifiers.md">Record qualifiers</a><small>MIR-1.2 — evidence named, not claimed</small></li>
+            <li><a href="https://github.com/MIR-1-WSP/model-intervention-records">Source and examples</a><small>GitHub, mirrored on Codeberg</small></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="cite">
+      <h2>Cite</h2>
+      <p class="sub">The document version (1.0) and the test-suite version (1.7.0) are
+      independent; the validator prints the suite version on its first line.</p>
+<pre><code>@misc{mir1_2026,
+  title  = {Model Intervention Records: A Conformance Test for Weight-Space Claims},
+  author = {{MIR-1 contributors}},
+  year   = {2026},
+  note   = {Version 1.0, test suite 1.7.0},
+  url    = {https://github.com/MIR-1-WSP/model-intervention-records}
+}</code></pre>
+      <p class="meta">Machine-readable metadata: <a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/CITATION.cff">CITATION.cff</a></p>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>MIR-1 contributors · 2026 · text CC BY 4.0, code Apache-2.0</p>
+    <p><a href="https://github.com/MIR-1-WSP/model-intervention-records">GitHub</a> · <a href="https://codeberg.org/MIR-1-WSP/model-intervention-records">Codeberg</a></p>
+  </div>
+</footer>
 </body>
 </html>
