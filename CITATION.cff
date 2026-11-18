@@ -13,8 +13,14 @@ abstract: >-
 type: software
 authors:
   - name: "MIR-1 contributors"
-version: "1.0"
+version: "1.2"
 date-released: "2026-11-18"
+doi: "10.5281/zenodo.24342472"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.24342471"
+    description: "Concept DOI, which always resolves to the latest version"
+url: "https://mir-1-wsp.github.io/model-intervention-records/"
 license:
   - Apache-2.0
   - CC-BY-4.0
@@ -28,6 +34,7 @@ keywords:
   - model editing
 notes: >-
   Published under a collective identity. The specification text, the companions,
-  and the paper are CC BY 4.0; the code is Apache-2.0. The document version is
-  1.0 and is independent of the test-suite version, which is reported by the
-  validator's first line.
+  and the paper are CC BY 4.0; the code is Apache-2.0. Three version numbers are
+  in play and they are independent: this release is 1.2, the specification text
+  is version 1.0, and the test suite is 1.7.0, which the validator prints on its
+  first line.

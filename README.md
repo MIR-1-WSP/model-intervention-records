@@ -116,6 +116,8 @@ states the residual threats, including the ones left unmitigated.
 
 ## Cite
 
+The release is deposited at **DOI [10.5281/zenodo.24342471](https://doi.org/10.5281/zenodo.24342471)**
+(the concept DOI, which always resolves to the latest version).
 `CITATION.cff` carries the citation metadata, under the collective identity the
 release is published with. The paper is the citable description of the format:
 *Model Intervention Records: A Conformance Test for Weight-Space Claims*,
