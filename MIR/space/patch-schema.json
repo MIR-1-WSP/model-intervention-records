@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.invalid/mir-1.1/patch-schema.json",
+  "title": "MIR-1.1 Weight Patch",
+  "description": "The payload a MIR-1 record may name at intervention.payload_hash. Additional members are permitted and preserved (section 5.1).",
+  "type": "object",
+  "required": ["wpp_version", "base", "id", "dependencies", "edit"],
+  "properties": {
+    "wpp_version": { "const": "0.1" },
+    "base": {
+      "type": "object",
+      "required": ["checkpoint_hash"],
+      "properties": {
+        "checkpoint_hash": { "$ref": "#/definitions/checkpoint_hash" },
+        "model_id": { "type": "string", "minLength": 1 },
+        "format": { "type": "string", "minLength": 1 }
+      }
+    },
+    "id": { "$ref": "#/definitions/patch_id" },
+    "dependencies": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/patch_id" }
+    },
+    "external_dependencies": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/patch_id" }
+    },
+    "edit": {
+      "type": "object",
+      "required": ["type", "ops", "num_changed"],
+      "properties": {
+        "type": { "enum": ["sparse_delta", "operator", "mixed"] },
+        "ops": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/definitions/set_op" },
+              { "$ref": "#/definitions/add_op" },
+              { "$ref": "#/definitions/scale_op" },
+              { "$ref": "#/definitions/add_vector_op" }
+            ]
+          }
+        },
+        "num_changed": { "type": "integer", "minimum": 0 },
+        "sparsity": { "type": "number", "minimum": 0 }
+      }
+    },
+    "inverse": {
+      "oneOf": [
+        { "$ref": "#/definitions/exact_inverse" },
+        { "$ref": "#/definitions/algebraic_inverse" }
+      ]
+    },
+    "invariants": {
+      "type": "array",
+      "minItems": 1
+    },
+    "invariants_hash": { "$ref": "#/definitions/checkpoint_hash" },
+    "falsifier": {
+      "type": "object",
+      "required": ["command", "returns"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "returns": { "const": "boolean" }
+      }
+    },
+    "falsifier_hash": { "$ref": "#/definitions/checkpoint_hash" },
+    "metadata": { "type": "object" }
+  },
+  "definitions": {
+    "checkpoint_hash": {
+      "type": "string",
+      "pattern": "^(sha256:)?[0-9a-fA-F]{64}$"
+    },
+    "patch_id": {
+      "type": "string",
+      "pattern": "^(wpp:)?(sha256:)?[0-9a-fA-F]{64}$"
+    },
+    "indices": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "numbers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "number" }
+    },
+    "tensor": { "type": "string", "minLength": 1 },
+    "set_op": {
+      "type": "object",
+      "required": ["op", "tensor", "indices", "values"],
+      "properties": {
+        "op": { "const": "set" },
+        "tensor": { "$ref": "#/definitions/tensor" },
+        "indices": { "$ref": "#/definitions/indices" },
+        "values": { "$ref": "#/definitions/numbers" }
+      }
+    },
+    "add_op": {
+      "type": "object",
+      "required": ["op", "tensor", "indices", "deltas"],
+      "properties": {
+        "op": { "const": "add" },
+        "tensor": { "$ref": "#/definitions/tensor" },
+        "indices": { "$ref": "#/definitions/indices" },
+        "deltas": { "$ref": "#/definitions/numbers" }
+      }
+    },
+    "scale_op": {
+      "type": "object",
+      "required": ["op", "tensor", "indices", "factor"],
+      "properties": {
+        "op": { "const": "scale" },
+        "tensor": { "$ref": "#/definitions/tensor" },
+        "indices": { "$ref": "#/definitions/indices" },
+        "factor": { "type": "number" }
+      }
+    },
+    "add_vector_op": {
+      "type": "object",
+      "required": ["op", "tensor", "rows", "vector"],
+      "properties": {
+        "op": { "const": "add_vector" },
+        "tensor": { "$ref": "#/definitions/tensor" },
+        "rows": { "$ref": "#/definitions/indices" },
+        "vector": { "$ref": "#/definitions/numbers" },
+        "scale": { "type": "number" }
+      }
+    },
+    "prior_entry": {
+      "type": "object",
+      "required": ["tensor", "indices", "values"],
+      "properties": {
+        "tensor": { "$ref": "#/definitions/tensor" },
+        "indices": { "$ref": "#/definitions/indices" },
+        "values": { "$ref": "#/definitions/numbers" }
+      }
+    },
+    "exact_inverse": {
+      "type": "object",
+      "required": ["kind", "prior"],
+      "properties": {
+        "kind": { "const": "exact" },
+        "prior": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/prior_entry" }
+        }
+      }
+    },
+    "algebraic_inverse": {
+      "type": "object",
+      "required": ["kind", "ops"],
+      "properties": {
+        "kind": { "const": "algebraic" },
+        "ops": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/definitions/set_op" },
+              { "$ref": "#/definitions/add_op" },
+              { "$ref": "#/definitions/scale_op" },
+              { "$ref": "#/definitions/add_vector_op" }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

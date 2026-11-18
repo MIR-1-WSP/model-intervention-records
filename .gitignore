@@ -1,0 +1,15 @@
+# Never publish any of these. The release bundle strips them too, and
+# make_release.py refuses a commit whose tracked files match this list.
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+
+# Local working material, never part of a release.
+.workbuddy-ai/
+.backup-*/
+MIR/paper/dist/
+release/*.bundle
+release/*.sha256
+release/v*/
+release/paper-v*/

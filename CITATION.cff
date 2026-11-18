@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this record format or its test suite, cite it as below."
+title: "Model Intervention Records: A Conformance Test for Weight-Space Claims"
+abstract: >-
+  A record format and a mechanical conformance test for claims that an
+  intervention changed a language model's behavior. A conforming record carries
+  an executable falsifier, an invariant set with at least one metric outside the
+  claim's own scoring function, and content-addressed lineage to a base
+  checkpoint. The test emits eleven individual verdicts and no aggregate score,
+  and so does the companion that extends the weights payload with composable
+  Weight Patches. Two dependency-free implementations, in Python and Go, are
+  written from the same text and agree byte for byte.
+type: software
+authors:
+  - name: "MIR-1 contributors"
+version: "1.0"
+date-released: "2026-11-18"
+license:
+  - Apache-2.0
+  - CC-BY-4.0
+repository-code: "https://github.com/MIR-1-WSP/model-intervention-records"
+keywords:
+  - weight-space programming
+  - model intervention records
+  - conformance testing
+  - evaluation validity
+  - reproducibility
+  - model editing
+notes: >-
+  Published under a collective identity. The specification text, the companions,
+  and the paper are CC BY 4.0; the code is Apache-2.0. The document version is
+  1.0 and is independent of the test-suite version, which is reported by the
+  validator's first line.

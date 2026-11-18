@@ -1,0 +1,219 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{xurl}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\hypersetup{
+  pdftitle={Model Intervention Records: Addendum on Weight Patches and Record Qualifiers},
+  pdfauthor={MIR-1 contributors},
+  pdfsubject={MIR-1: additions after version 1.0},
+  pdfkeywords={weight-space programming, model intervention records, weight
+    patches, conformance testing, reproducibility, evaluation validity}
+}
+
+\setlength{\parskip}{0.35em}
+\setlength{\parindent}{0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textsc{mir-1 addendum}}
+\fancyhead[R]{\small Weight Patches and Record Qualifiers}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\begin{document}
+
+\thispagestyle{plain}
+\begin{center}
+\vspace*{0.4em}
+{\LARGE\bfseries Model Intervention Records}\\[0.35em]
+{\LARGE\bfseries Addendum: Weight Patches and Record Qualifiers}\\[0.8em]
+{\large Addendum to version 1.0}\\[0.25em]
+{\large 18 November 2026}\\[0.8em]
+{\small\textbf{Keywords:} weight-space programming; weight patches; model
+intervention records; conformance testing; reproducibility}
+\end{center}
+\vspace{0.2em}
+\hrule
+\vspace{0.6em}
+
+\begin{abstract}
+Version 1.0 of this work specified a record format and eleven checks. Two
+documents were subsequently published beside it: one defines a composable
+payload for the \texttt{weights} intervention type and five checks reported in a
+separate block; the other names four measurements the evidence already carries.
+This addendum records both in one citable place and states exactly what did and
+did not change. No requirement was withdrawn, no member was added to a record,
+no canonical byte changed, and no identifier moved. The eleven checks of version
+1.0 are the eleven checks of suite 1.7.0. What was added is a wider payload and
+a finer vocabulary for evidence, not a new test.
+\end{abstract}
+
+\section{Scope, and what ``additive'' means here}
+
+The paper specifies form, not desirability: a record states an executable
+falsifier, an invariant set with at least one metric outside the claim's own
+scoring function, and content-addressed lineage to a base checkpoint, and a
+mechanical test reports eleven verdicts. Two additions followed publication.
+Neither is a revision, and nothing in the paper is withdrawn.
+
+``Additive'' is used here as a measurement and not as a claim of intent. The
+test is: a record that carries none of the additions must produce the report it
+produced before. That was checked against the validator as it stood before the
+additions (suite 1.5.0) on all six records in the release. Every check line ---
+identifier, verdict, and detail string --- is identical, and every record
+identifier is unchanged. What differs is the last line: a record that carries a
+patch reports the patch block beside the eleven, and a record that earns a
+qualifier gains one line naming it. The suite number moved; nothing else did.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+Property & State after the additions \\
+\midrule
+Record schema & byte-identical (\texttt{schema.json}, 6{,}369 bytes) \\
+Worked example & \texttt{MIR-R1}, identifier unchanged \\
+Requirements & eleven, unchanged; no new required field \\
+Suite version & 1.7.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Weight Patches}
+
+A \texttt{weights} payload may now name a patch instead of a full checkpoint. A
+patch states the base checkpoint by its hash, an ordered list of operations, any
+patch it depends on, and an inverse. The operation vocabulary is closed:
+\texttt{set}, \texttt{add}, \texttt{scale}, and \texttt{add\_vector}. Indices are
+ascending and unique within an operation, so that two serializers cannot spell
+one patch two ways, and the patch identifier is the hash of the canonical bytes
+with the identifier field removed.
+
+Composition is executable rather than described. A patch whose base is a
+\texttt{wpp-array-0.1} container can be applied to the container, and a stack of
+patches is applied in dependency order, which is a depth-first post-order of the
+lineage graph. This is what lets the test do something other than read the
+patch: it applies it, applies the inverse, and compares bytes.
+
+Reversibility is reported in two forms because one of them is not always
+available. Restoring a value by adding the negative of a delta is not
+bit-identical in binary32: $(x+d)-d$ can differ in the last place for some $x$
+and $d$. An \emph{exact} inverse therefore stores the prior values and restores
+them by assignment, and only an exact inverse is executed. An
+\emph{algebraic} inverse --- negation, or a reciprocal for a scale --- is
+recorded for a patch that has no captured prior, and is reported as not run. A
+test that executed it would fail additive patches for a reason that is
+arithmetic rather than a defect in the patch.
+
+Five checks, P-01 to P-05, report on a patch: the base resolves and matches the
+record, the patch conforms and its identifier matches its bytes, dependencies
+resolve in order with no overlapping writes, the patch restates the record's
+invariant set and falsifier, and the round trip is exact. They are reported in a
+separate block and are never merged into the eleven. That separation is
+deliberate: the eleven are the format's requirements, the five are a property of
+one payload, and a record without a patch must produce the report it produced
+before. Three qualifiers --- \texttt{patch-executable}, \texttt{stackable},
+\texttt{reversible} --- are derived from those checks and cannot be declared.
+
+Two limits belong with the definition. Patch identifiers use their own prefix
+and stay inside the payload, so the record-level hash walk, which resolves
+\texttt{sha256:} strings, does not see them; P-02 and P-03 check them instead,
+and the record-level rule was left narrow rather than silently widened. And
+\texttt{num\_changed} can only be recomputed when the base's shapes are known
+and no operation names the same row twice; where it cannot be recomputed, the
+check reports that the count is declared rather than assuming either answer.
+
+\section{Record Qualifiers}
+
+A record can carry evidence that no check asks about: that a baseline run
+exists, that every run measured one population, that another operator rebuilt
+the claim without disclosing a cost, that the invariants were re-measured and
+not only the target metric. The status vocabulary is deliberately narrower than
+that evidence, for the reason section 6 of the paper gives for status itself: a
+value a record may declare is a value a record may claim. So the four
+measurements are named as \emph{qualifiers}, derived by the test from the record
+and never read from it.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+Qualifier & State it names \\
+\midrule
+\texttt{baseline-present} & at least one run applies no intervention \\
+\texttt{single-population} & every run reports the same unit count and sample count \\
+\texttt{unpriced-reproduction} & another operator's run is uncosted and reports the claim \\
+\texttt{invariants-replicated} & a counted run reports every invariant metric \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each one says less than its name suggests, and the companion document states
+what it does not mean. The one most likely to be misread is
+\texttt{unpriced-reproduction}: it does not say the claim was replicated. It
+names the run that the cost rule excludes from counting, and it makes that run
+visible instead of letting a reader infer replication from a status.
+
+\section{The adoption surface}
+
+A format is adopted when the tools that produce the artifacts emit it. An
+adapter for one such tool now reads the run directory that tool publishes --- a
+manifest, an edit as named tensors, and a short run description --- and writes a
+record and a patch. It delegates every judgement to the test: it does not
+restate a rule, it writes a record and the test says whether the record
+conforms. It does refuse one thing. MIR-1-04 fails a run that states no cost, so
+the adapter will not write a record whose runs state none unless it is told to,
+and then it writes a record that fails that check. An adapter that quietly
+reproduced the one failure of the worked example would remove the reason the
+example exists.
+
+The adapter has been exercised against a fixture cut in the shape the upstream
+tool publishes, not against the tool itself, and that is stated where the
+adapter is documented. It is worth stating here too, because it is the same
+point the paper makes about conformance: a record produced with the wrong
+convention for an edit is still conforming, and the test cannot tell. The format
+makes form checkable. It does not make the artifact true.
+
+\section{Residual limits}
+
+The limits of version 1.0 remain. Invariant bounds are declared, not evaluated:
+the test checks that a bound is stated as a number and that the invariant set
+reaches outside the claimed score, not that the bound was met. Operator identity
+is taken from what the record declares. No third implementation exists, so
+implementer independence is still unmet; the two implementations that do exist
+agree byte for byte on every record, on every mutation in the repository, and on
+a corpus of four hundred random documents, which is evidence that the text is
+implementable and not evidence of independence.
+
+Two limits are new. A patch is checked as a payload, so a patch that is
+well-formed and applies to the wrong checkpoint is caught only if its declared
+base disagrees with the record's base. And an addendum is still one account by
+one collective author: it records what changed, and a reader who wants to know
+whether the change was warranted should run the test rather than read this.
+
+\section{Checking the claims in this addendum}
+
+Every number above is reproducible from the release. The eleven verdicts for
+any record come from the validator, which needs nothing installed:
+
+\begin{verbatim}
+cd MIR
+python3 validate.py records/MIR-R1.json
+python3 ci/check.py
+\end{verbatim}
+
+The first command ends in a failure of exactly one check, on cost disclosure,
+which is the paper's subject. The second asserts every expected answer in the
+release, including the ones that must fail, and runs both implementations
+against each other. The patch examples are in the repository, each failing one
+patch check in turn, so that the five verdicts are not merely reported but seen
+to be reachable.
+
+\end{document}

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mir-1-wsp.github.io/model-intervention-records/sitemap.xml

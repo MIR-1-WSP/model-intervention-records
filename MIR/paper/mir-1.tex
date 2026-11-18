@@ -1,0 +1,672 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{xurl}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\hypersetup{
+  pdftitle={Model Intervention Records: A Conformance Test for Weight-Space Claims},
+  pdfauthor={MIR-1 contributors},
+  pdfsubject={MIR-1: conformance requirements and test suite},
+  pdfkeywords={weight-space programming, model intervention records, weight
+    editing, conformance testing, reproducibility, evaluation validity}
+}
+
+\setlength{\parskip}{0.35em}
+\setlength{\parindent}{0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textsc{mir-1}}
+\fancyhead[R]{\small Model Intervention Records}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\begin{document}
+
+\thispagestyle{plain}
+\begin{center}
+\vspace*{0.4em}
+{\LARGE\bfseries Model Intervention Records}\\[0.35em]
+{\LARGE\bfseries A Conformance Test for Weight-Space Claims}\\[0.8em]
+{\large Version 1.0}\\[0.25em]
+{\large 14 November 2026}\\[0.8em]
+{\small\textbf{Keywords:} weight-space programming; model intervention records;
+weight editing; conformance testing; reproducibility; evaluation validity}
+\end{center}
+\vspace{0.2em}
+\hrule
+\vspace{0.6em}
+
+\begin{abstract}
+Claims that an intervention changes a language model's behavior are currently
+not comparable. The interventions at issue are the ones now described as
+weight-space programming: a model's weights read and edited directly, without
+gradient descent or a training loop. Two reports of the same intervention can
+both be accurate and still disagree about what happened, because neither record
+states what was required not to change. We specify a record format with three
+mandatory components: an executable falsifier; an invariant set containing at
+least one metric outside the claim's own declared scoring function; and
+content-addressed lineage to a base checkpoint. We then specify a mechanical
+test that checks them, and we apply it to a published intervention: the record
+satisfies ten of eleven checks and fails the one on cost disclosure. The test
+emits no aggregate score and does not assess importance, safety, or desirability.
+We release two dependency-free implementations, written from the same text in
+different languages, and they agree on every input in the repository. Adoption
+requires no authority: conformance is a claim that anyone may check.
+\end{abstract}
+
+\section{Introduction}
+
+Weight-space programming---reading and writing the weights of a trained model
+directly, without gradient descent or a training loop---is now cheap enough to
+be routine. A search loop can propose an intervention, score it on a small set,
+keep it only if the gain exceeds measured noise, and repeat, at a cost within
+reach of a single researcher with consumer hardware. Reports of such
+interventions appear within days of the methods that produce them, and the
+artifacts---modified checkpoints, run logs, rejected candidates---are published
+alongside.
+
+The reporting format has not kept pace. A report typically states a base model,
+an intervention, a target metric, and a result. That set of fields is
+sufficient to describe a success. It is not sufficient to describe a success
+that damaged something else, because there is no field in which the author can
+state what was required not to change.
+
+The consequence is not that authors are careless. It is that the format
+determines the observation set. When the scoring function is the only
+specification of what to measure, the record will describe exactly what was
+scored. Two authors using the same format will produce records that are
+individually accurate and jointly incomparable, and neither record will contain
+the information needed to detect that the intervention broke a property nobody
+was looking at.
+
+We make five contributions:
+
+\begin{enumerate}
+\item A documented instance of this failure, from a public run on 8 November
+  2026~\cite{beaker}, in which an accepted intervention reduced mathematical
+  accuracy from 80\% to between 23\% and 54\% and GSM8K accuracy from 46\% to
+  0\% in a pre-check, while the score the loop optimized stayed accurate.
+\item A record format that requires the missing field, together with the fields
+  needed to make a claim checkable by a third party. We call it MIR-1, for
+  Model Intervention Records.
+\item A mechanical conformance test over that format, with an explicit list of
+  what it does not check.
+\item Two reference implementations, dependency-free, running on one machine.
+\item A worked example: a published intervention re-recorded under the format,
+  with the three fields the exercise showed were missing and one defect it
+  exposed in the format.
+\end{enumerate}
+
+We do not claim that weight editing is the correct unit of behavioral change,
+and we do not claim that adopting this format makes a model safer. Both
+questions are out of scope, and Section~\ref{sec:cannot} explains why leaving
+them out is a condition of the format being usable at all.
+
+\section{The failure mode}
+
+On 8 November 2026 a public run reported an intervention that reduced response
+length~\cite{beaker}. The selection score was brevity credit, awarded only to
+answers that were right: an edit was kept when it shortened answers without
+making them wrong on the target set. The loop accepted one, and the score
+described the reduction accurately.
+
+The run's write-up reports what the score did not. Mathematical accuracy fell
+from 80\% to between 23\% and 54\%; GSM8K accuracy fell from 46\% to 0\% in a
+pre-check; at least one run began every mathematical response with a stray
+period. The author noticed, and said so in prose, after the loop had finished.
+
+Nothing in that sequence is anomalous. The loop did what loops do: it optimized
+the function it was given, over the observations the format could express. The
+score was accurate and the system was damaged, and both statements hold at once
+because the score never claimed otherwise---it had no field in which to.
+
+The prose is the part that does not travel. It is not read by the next loop, it
+is checked by nothing, and a reader who wants the number has to find the
+sentence that contains it.
+
+Three properties of this failure make it a format problem rather than an author
+problem.
+
+First, it is reproducible by anyone. The same field set, applied to a different
+intervention, produces the same class of blindness. The failure does not depend
+on the author's judgment, care, or honesty.
+
+Second, it scales with the loop. A manual intervention is inspected once by a
+human who may notice a side effect. A loop runs thousands of interventions and
+keeps the ones that pass a score. The score is the entire specification of what
+to keep, so the blindness is applied thousands of times at machine speed.
+
+Third, it is invisible in the output. A damaged model that satisfies its score
+looks like a success in every field the record contains. Detection requires an
+observation the record did not request.
+
+The remedy follows directly: the record must contain a field for what was
+required not to change, and that field must be checked mechanically, because a
+field that is checked by inspection is a field that is checked when someone
+remembers.
+
+\section{Record requirements}
+
+The requirements below use MUST in the sense of RFC~2119~\cite{rfc2119}. A
+record that omits a MUST is not a MIR-1 record, whatever else it contains.
+
+\subsection{Claims as tuples}
+
+A claim is a tuple of behavior, distribution, direction, threshold, and the
+metrics the scoring function observes. The
+behavior must be defined operationally by the harness. A behavior defined in
+prose is not checkable, and a claim that is not checkable cannot be the subject
+of a conformance test.
+
+\subsection{Falsifier}
+
+A record must carry an executable falsifier: a command or a fully specified
+measurement that returns a boolean. The requirement is not that the author be
+wrong; it is that the author state, in a form a machine can evaluate, what
+observation would show that they are.
+
+A falsifier written in prose does not conform, regardless of its precision. The
+distinction is not stylistic. Prose falsifiers are read by people who already
+believe the claim; executable ones are run by people who do not.
+
+\subsection{Invariant set}
+
+An invariant set is a list of properties, each naming a metric, a direction, and
+a numeric bound. The direction says how the bound is read: a floor, a ceiling,
+or a signed change from the base run. The claim, in turn, declares the metrics
+its scoring function observes in \texttt{scoring\_metrics}, and its own behavior
+must be one of them. The set must contain at least one metric that is not among
+them.
+
+This is the requirement that addresses Section~2. A record whose invariant set
+is a subset of its scoring function reproduces the failure exactly while
+presenting every required field as complete---which is worse than omitting the
+field, because it produces the appearance of diligence.
+
+The minimum form is one metric, measured outside the scoring function, with a
+bound. In the case of Section~2 the set would have contained mathematical
+accuracy with a bound of five percentage points: the number the prose reported
+would have been in a field a machine can read, next to the claim it qualifies,
+rather than in a paragraph below it.
+
+The check is on the declaration, but the comparison is mechanical. The suite
+does not reconstruct the scoring function from the harness; it compares each
+invariant's metric against the metrics the claim declares. The degenerate case
+is therefore closed: an invariant whose metric is the claim's own behavior is
+inside by construction, and no field can place it outside. What remains open is
+the general false declaration---a record that scores a metric and omits it from
+its declared set will pass C-05, and that is a false record, not a
+non-conforming one. The suite can make the honest omission visible, which is the
+failure in Section~2. It cannot make a false declaration true, and it does not
+claim to.
+
+\subsection{Lineage and content addressing}
+
+Every artifact referenced by a record is identified by a hash of its bytes: the
+base checkpoint, the intervention payload, the harness, and each run's inputs.
+Lineage is a directed edge from a record to the record or records it was
+applied on top of, resolving to a base artifact.
+
+Content addressing does two things that identifiers do not. It makes silent
+modification detectable, and it makes a fork legible: two records that share a
+parent are visibly related, and a record whose parent cannot be retrieved is
+visibly orphaned.
+
+A hash that resolves to content nobody retained is the common failure of
+reproducibility, and it is a failure of the record rather than of the reader.
+The requirement is retrieval by a third party, not the existence of a digest.
+Because a checkpoint is frequently larger than anything a reviewer will
+download to check a record, the format allows a locator: a file named for the
+digest that declares the size and a URL, and is confirmed against the host by a
+request that transfers no bytes. The check reports whether it confirmed the
+locator or merely accepted it.
+
+\subsection{Population}
+
+Every run declares how many units it measured and how many samples it drew per
+unit. This is the field whose absence makes two accurate records incomparable,
+and Section~\ref{sec:worked} shows a published case in which it is the
+difference between a 46-point improvement and two different experiments.
+
+\subsection{Independence}
+
+A claim is replicated when at least one run was executed by an operator other
+than the claimant, whose declared funding source is disclosed and differs from
+the claimant's. The record names the claimant: a replication is measured
+against whoever asserts the claim. A funding source that is not disclosed is not
+a source, so a record declaring one cannot reach the status. The mechanism
+for establishing distinctness is not specified here, and this is a known gap:
+funding disclosure is a minimum, not a solution.
+
+\subsection{Export}
+
+A registry must be exportable in full, by one command, in a format a third
+party can re-import and verify.
+
+This requirement protects the people whose records the registry holds, and it
+is the only requirement in the format that does so. A registry that cannot be
+left is not a shared record. It is a silo with a public address, and the
+distinction is the difference between a format and a product.
+
+\section{The test}
+
+The suite implements eleven checks: parse and content-address verification;
+the published schema, run rather than restated; hash resolution as stored
+bytes or as a confirmed locator; falsifier declaration and return type;
+invariant metrics, directions, and numeric bounds, with at least one metric
+outside the claim's declared scoring function; lineage
+resolution; cost and wall time disclosed as numbers on every run, where a run
+that produced a result must have taken time; manifest
+resolution; an export round-trip that must reproduce its own results; a
+status check, which refuses \texttt{replicated} unless the record names a claimant with
+a disclosed funding source and carries the number of runs the manifest requires
+by other operators with disclosed, differing sources; and a grounding check,
+which requires every run to report the metric the claim is about.
+
+Two design constraints govern the check set.
+
+The first is implementability. The suite must be implementable from the
+specification alone, within one working day, by an implementer with no access
+to the authors. A requirement that fails this condition does not enter version
+1. This is a quality gate on the specification rather than on the
+implementation, and it is the reason the requirement list is short.
+
+The second is the exclusion of non-mechanical checks. The suite does not report
+on importance, novelty, evaluation quality, operator reputation, model safety,
+or desirability. These are not mechanical, and a suite that reports on them
+becomes a rating. A rating has an owner, an owner has an interest, and an
+interest is the thing that the format exists to prevent from entering the
+record.
+
+For the same reason the suite emits no aggregate score. An aggregate is
+optimized rather than satisfied, and a score that can be optimized by damaging
+an unmeasured property reproduces Section~2 at a higher level of abstraction.
+
+The falsifier is checked for declaration and return type rather than executed
+by default. A record is untrusted input, and a validator that executes commands
+from untrusted input cannot be run on the records it is meant to check.
+Execution is available as an explicit option for records whose provenance is
+known.
+
+Each record-level check except C-07 and C-09 has a mutation that makes it fail;
+C-07's failure is the record as published, and C-09 is the serializer's
+round-trip, which no record mutation can remove. A check that has never been
+observed to fail is not known to work, and the repository carries the cases that
+produce each failure it can produce.
+
+The schema check is worth one sentence about how it is built. The validator
+does not carry its own list of required fields: it loads the published schema
+and checks the record against it. It did carry one, and the copy drifted --- a
+field became required in the schema and stayed missing from both
+implementations, which agreed with each other and disagreed with the document.
+Two implementations agreeing proves the text is implementable; it does not
+prove either one matches the contract.
+
+The content address in the first check forced a normative detail that a prose
+specification usually leaves out: the canonical bytes of a record. Writing the
+second implementation from the text is what made it normative, because two
+serializers that spell the same value differently produce two ids for one
+record, and a format whose identity depends on a serializer cannot be
+implemented twice. The detail that had to be fixed was number formatting: the
+first implementation wrote exponent notation for values at or above $10^{16}$
+and below $10^{-4}$, while canonical bytes may not contain an exponent. The
+text said the canonical form is plain decimal; the implementation did not match
+the text. It does now. This is the class of defect a second implementation is
+for, and it was found before the format was used by anyone else.
+
+\section{The worked example}
+\label{sec:worked}
+
+We re-recorded a published intervention under the format. On 2 November 2026 an
+LLM changed 131,072 weights of Qwen3.5-0.8B, 0.017\% of the model, to remove a
+reasoning loop that made it repeat until the token limit. Two operators
+published measurements: the original group, and a rebuild from the published
+edit by a second operator that re-ran the evaluation.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}l p{0.76\textwidth}@{}}
+\toprule
+Check & Result on the record \\
+\midrule
+C-01, C-02 & pass \\
+C-03 & pass: 21 hashes resolve; 8 references by locator, confirmed against the host with \texttt{--verify-remote} \\
+C-04 & pass: declared; executed with \texttt{--execute-falsifier}, returned true, recomputes 0.51 from 2,000 samples \\
+C-05 & pass: 3 invariants outside the declared scoring function; bounds declared, not evaluated \\
+C-06 & pass: applies directly to a base artifact \\
+C-07 & fail: no run states a cost and wall time \\
+C-08, C-09 & pass \\
+C-10 & pass: status \texttt{submitted}; lineage resolves \\
+C-11 & pass: all 4 runs report \texttt{math500\_accuracy} \\
+\bottomrule
+\end{tabular}
+\caption{The eleven checks applied to a published intervention re-recorded under
+MIR-1. The record is `submitted', not `replicated', because of the single
+failure.}
+\end{table}
+
+The claim is that the edited checkpoint reaches at least 45\% on MATH-500. The
+original operators report 48.1\% over 500 problems with 4 samples each; the
+rebuild by a second operator reports 51.0\% over the same population. Two
+operators, one re-run that lands inside the claim. The record's status is \texttt{submitted}
+regardless, for two separate reasons: no run states a cost, so no run counts
+toward any requirement; and the claimant's funding source is not disclosed, so
+the status check cannot establish an independent source either. That is the
+format declining to credit evidence it cannot see priced. The requirement costs
+one number per run.
+
+Three fields were added because the record could not be written without them.
+
+A baseline run applies no intervention, so its intervention hash is null. A
+change that is not measured against a baseline cannot be stated as a change.
+
+Cost and wall time may be null, meaning explicitly undisclosed. The field stays
+in the record and the check still fails, so the omission is visible in the
+record rather than absent from it.
+
+A checkpoint of 1.7\,GB will not be downloaded to check a record, so a hash may
+resolve to a locator, and the check states whether it confirmed the locator
+against the host. A validator that reports an unconfirmed locator as resolved
+is claiming more than it measured.
+
+The example also exposed a defect we did not fix. The model repository contains
+two files named for the same distribution. One measures 25 problems and reports
+5.0\%; the other measures 500 and reports 51.0\%. The model card states that the
+first is a smoke test and the full baseline is in a different repository, under
+a different commit; the file name does not state that, and neither file carries
+a population. A reader who computes the difference between the two files has
+computed a 46-point improvement across two populations. With
+\texttt{n\_units} required, the difference sits inside the record where it can
+be seen. Nothing prevents the comparison, and version 1 checks only that every
+run states its population, not that two runs share one.
+
+\section{What the test cannot do}
+\label{sec:cannot}
+
+Three threats are mitigated by the format: evaluation capture, because the
+invariant set requires an observation outside the scoring function; record
+spam, because a record costs a run; and a comparison between two populations,
+because every run states its own.
+
+Three are not. Sybil replication is only partially addressed by funding
+disclosure. Harness decay is reduced but not eliminated by the retrieval
+requirement. And a well-funded actor holding the only credible evaluations can
+satisfy every requirement in the format while controlling what counts as
+evidence.
+
+One limit sits inside the record. The invariant field is verified against the
+claim's own declaration of its scoring function: a record that scores a metric
+and omits it from that declaration passes C-05, because the suite cannot see the
+scoring function itself. The limit produces a false record rather than an
+unparseable one. The suite makes the honest omission visible, which is the
+failure in Section~2; it does not detect a declaration that is untrue.
+
+The status vocabulary is restricted rather than checked loosely. Four statuses
+exist, and each is a function of evidence: a record whose lineage does not
+resolve must be \texttt{orphan}, and one whose lineage resolves must not be; \texttt{replicated}
+requires a disclosed claimant and the manifest's independent runs. The three
+statuses a registry would normally hold --- \texttt{challenged}, \texttt{refuted}, \texttt{expired} ---
+are not in the format, because each needs an object the format does not define.
+A status no check can test is a word, and the vocabulary is limited to what the
+evidence determines.
+
+We state the last one explicitly because a threat model that lists only
+mitigated threats is a prospectus. The format does not fix this condition. It
+requires that evaluations be named, hashed, and retrievable, which makes the
+control observable without making it removable. Observability is a smaller
+claim than safety, and it is the only claim the test can support.
+
+The worked example also shows what the test does not reach. The dataset used by
+the harness is loaded without a revision pin, so the harness hash covers the
+code and not the data it ran on. A record can therefore be conformant and still
+be tied to a distribution that has since changed. Pinning the dataset is a
+change to the harness, not to the suite, and version 1 does not require it.
+
+Two further gaps were found by asking what a published artifact of a different
+kind would look like as a record, and both are reported here rather than
+silently excluded from the check list.
+
+The first is that lineage is declared, not computed. Every hash must resolve,
+and no check asks whether the payload was derived from the base, or whether it
+differs from it. The repository now carries the case: set the payload hash equal
+to the base hash, keep the claim, and the record fails exactly the check the
+honest record fails and nothing else. A record can assert that it edited a
+checkpoint into something else while the something else is the checkpoint. The
+test cannot see this, because the test asks whether a hash resolves and not
+whether a transformation happened. Closing it requires the base bytes and a
+definition of what counts as derived, which is a larger requirement than
+resolving a hash; version 1 states the gap instead of pretending to close it.
+
+The second is that a construction cannot be typed. The format requires a base
+artifact that resolves, so an intervention that builds a model without a parent
+--- weights written directly, no training, no base to edit --- has no value for
+that field. Such work is out of scope in version 1: not rejected, not expressed.
+This is a scope limit rather than a defect in the checks, and it matters because
+the artifacts the field is producing are increasingly of that kind.
+
+\section{Related work}
+
+Reporting checklists have solved an adjacent problem in medicine.
+CONSORT~\cite{consort} specifies the minimum information a randomized trial
+must report, and became effectively mandatory through editorial policy rather
+than through any enforcement authority. MIQE~\cite{miqe} did the same for
+quantitative PCR, where the claim being reported is a measurement rather than
+an outcome. In both cases the mechanism is the same: a venue requires the
+checklist, and the checklist is short enough that requiring it costs authors
+little.
+
+Supply-chain attestation addresses a different question with a similar
+structure. SLSA~\cite{slsa} specifies what must be provable about how an
+artifact was built, and it is enforced by tooling rather than by inspection.
+
+Model Cards~\cite{modelcards} and Datasheets~\cite{datasheets} describe
+artifacts: a model, a dataset. The object of this format is different. It
+describes an intervention, which has a parent, and the claim is about a change
+rather than a thing. A model card states what a model is. This states what
+someone did to it, what followed, and what was required not to follow.
+
+Two recent lines of work supply the objects this format is meant to describe.
+Weight-space programming~\cite{sparks} reports that a general-purpose model can
+read and write the weights of another network directly, and
+WeightLoop~\cite{weightloop} turns that into a loop driven by experimental
+feedback. Deletion Tuning~\cite{deletion} reaches comparable results by masking
+a small fraction of weights during post-training, with a much smaller artifact
+and less forgetting. Each is a report of an intervention, and each would be
+comparable to the others under a shared record.
+
+The authors of weight-space programming have since stated that it is not a
+method but ``the name of an emerging concept'', and that their experiments are
+``evidence for that statement, not a proposed method for editing or training
+networks''~\cite{sparks}. They also report more than a hundred replications,
+extensions, benchmarks, and applications known to them. This is the condition
+the format addresses: a concept with many independent reports and no shared
+record yields many claims that cannot be compared, and the missing piece is not a
+method specification but the record.
+
+The \texttt{dspy-wsp} package turns the concept into a DSPy
+optimizer~\cite{dspy}: a frontier model reads and edits a student's weights with
+no gradients, and the result is a program that can be optimized like any other.
+Runs that accept an edit carry a \texttt{patch/manifest.json} naming the base
+model and revision, the writer, the forward-pass budget, the changed tensors, and
+the result of the final check on the 400-case test split, with the tensor delta
+in \texttt{edit.npz} beside it. The run report carries the budget, the turn
+count, every validation run, and a patch summary. Where cost and wall time are
+published, they appear in the results README rather than in the report, which is
+the run-level gap C-07 measures. The distance is small: the format is not asking
+for a new logging system, only for two numbers the operator already has. The
+edit in the d1 run is a 1,024-weight correction to one scorer layer, computed in
+closed form; the point here is the artifact it leaves, not the search that
+produced it.
+
+Interpretable weight-space programming~\cite{iwsp} is the closest work and the
+sharpest contrast. An agent writes a transformer's weights by hand, with no
+gradient descent, seeing one validation score per iteration, and the resulting
+model is small enough to be read; a fresh model rebuilds it from a two-hundred
+word description, and thirteen of thirteen rebuilt models reach full accuracy on
+held-out algorithmic tasks. That is a stronger property than anything this
+format checks. A record asks whether an artifact can be retrieved; iWSP asks
+whether it can be regenerated from a description, and it can.
+
+The two answers are not rivals, and the scope of each follows from the artifact.
+Where the artifact fits in a page, interpretability is the better control,
+because a reader can see what the model computes and no record format can
+substitute for that. Where the artifact is an edit to a checkpoint of a size
+nobody will read, readability is not available, and the only mechanical
+controls left are the ones specified here: an invariant outside the scoring
+function, a falsifier, and lineage that resolves. The iWSP runs also publish
+\texttt{cost\_usd} and wall-clock seconds per session in machine-readable
+metadata, which is precisely the number that C-07 requires and the one the
+worked example lacks. The requirement is not exotic; it is already being met by
+a project that is not writing records.
+
+\section{Limitations}
+
+No record of a published intervention in this paper conforms. The worked
+example fails the check on cost disclosure; the example in Section~2 fails the
+check on invariants. A synthetic record in the repository passes all eleven
+checks, so the test is satisfiable; it has not been satisfied by a published
+intervention without a change in what operators publish. That change is one
+number per run. It has not been made in a record, and the reason is not that the
+number is hard to produce: at least one published project writes it into
+machine-readable metadata for every run it performs~\cite{iwsp}. The gap is that
+the number is not written where a checker can read it, which is the only thing
+this format asks.
+
+The unit question is unresolved. It is not known whether a weight edit can
+express a behavior that a prompt or a steering vector cannot, and the record
+format is therefore typed: an intervention may be declared as weights, vector,
+harness, or other. A record declaring the cheaper unit is as valid as one
+declaring the more expensive one, and is often the truthful one. If it turns
+out that the cheaper unit is always sufficient, the format remains correct and
+the interesting objects become vectors and prompts.
+
+The independence mechanism is underspecified, as noted in Section~3.6. Operator
+identity is taken from what the record declares, and a record that declares a
+false funding source is not detectable by the suite.
+
+Invariant bounds are declared, not evaluated. The suite checks that a bound
+exists, that it is numeric, that its direction is one of three values, and that
+at least one invariant's metric lies outside the declared scoring function. It
+does not compute whether the bound held. Satisfaction is a claim the record
+makes, and a reader who wants it must run the harness the record names.
+
+Two of the example records fail, on different checks: one on cost, and one
+synthetic fixture on invariants. A format whose best available examples are failures
+has been shown to be checkable; it has not been shown to be satisfied by a real
+artifact.
+
+No claim is made about adoption. Whether venues will require the checklist, and
+whether registries will satisfy the export requirement, are empirical questions
+that this paper cannot answer. The format is published with a stated failure
+condition for that reason.
+
+\section{Availability}
+
+The specification, schema, validator, normative kernel, the worked example, and
+the example records are released under CC BY 4.0 for text and Apache-2.0 for
+code. Both validators have no third-party dependencies and run on a single
+machine. The kernel is a standalone file of under 250 words, intended for
+inclusion in automated review pipelines and in the context window of
+model-based review systems; it is normative, and where it differs from the
+specification the specification governs.
+
+The worked example is reproducible without downloading either checkpoint: the
+record cites locators, the validator confirms them against the host in one
+request each, and the falsifier recomputes the claim from the per-sample
+observations one of the operators published. From a copy of the repository:
+
+\begin{verbatim}
+python3 validate.py records/MIR-R1.json --verify-remote
+python3 records/falsify.py records/MIR-R1.json
+python3 crosscheck.py --remote
+\end{verbatim}
+
+The third command runs the reference implementation and the second
+implementation on the same records, every mutation in the repository, a corpus
+of damaged stores, and, with \texttt{--fuzz}, a set of random documents. It
+exits non-zero if their reports differ by one byte.
+
+The random corpus is half arbitrary JSON shapes and half mutations of a
+conforming record, and the run prints, per check, how many documents passed it,
+how many failed it, and how many distinct messages it produced. The distinction
+matters: an arbitrary shape fails the schema and everything downstream
+short-circuits, so a corpus of shapes alone yields one message per check and
+measures agreement about malformed input. Over 400 documents the mixed corpus
+reaches 190 distinct messages, and every check but the round-trip invariant has
+been seen to fail.
+
+A single implementation is a project. A second implementation is evidence that
+the text, rather than its author, specifies the format. We have two:
+\texttt{validate.py} in Python and \texttt{impl2/} in Go, written from the
+specification and sharing no code. They agree on every input in the repository.
+Writing the second one found the canonical-form defect described in
+Section~4. Four further defects found while extending the differential test are
+logged in the repository's defect notes, each with the test that now guards it.
+That is evidence of implementability; it is not evidence of
+implementer independence, because the same author wrote both. The condition for
+a standard remains an implementation by someone with no access to the authors,
+and the specification is written so that this is possible within one working
+day.
+
+\begin{thebibliography}{10}
+
+\bibitem{consort} Schulz KF, Altman DG, Moher D. CONSORT 2010 statement:
+  updated guidelines for reporting parallel group randomised trials. BMJ. 2010.
+
+\bibitem{miqe} Bustin SA, et al. The MIQE guidelines: minimum information for
+  publication of quantitative real-time PCR experiments. Clinical Chemistry.
+  2009.
+
+\bibitem{rfc2119} Bradner S. Key words for use in RFCs to indicate requirement
+  levels. RFC 2119. IETF, 1997.
+
+\bibitem{modelcards} Mitchell M, et al. Model cards for model reporting. FAT*
+  2019.
+
+\bibitem{datasheets} Gebru T, et al. Datasheets for datasets. Communications of
+  the ACM, 2021.
+
+\bibitem{slsa} OpenSSF. SLSA: Supply-chain Levels for Software Artifacts.
+  Specification.
+
+\bibitem{sparks} Takehi R, Teoh J, Zhang A, Khattab O. Sparks of Weight-Space
+  Programming: LLMs can natively read \& write neural network weights. 2
+  November 2026. Response to Comments added 12 November 2026.
+  \url{https://rikiyat.github.io/blog/weight-space-programming/}
+
+\bibitem{dspy} Breunig D. dspy-wsp: weight-space programming as a DSPy
+  optimizer. Version 0.2.0, 13 November 2026.
+  \url{https://github.com/cmpnd-ai/dspy-wsp}. MIT License.
+
+\bibitem{hfmodel} RikiyaT. Qwen3.5-0.8B-weight-space-programming. Hugging Face
+  model repository, 2 November 2026.
+
+\bibitem{weightloop} Li M, Li B, Zhao W, Zhang C, Zhang B, Xu J, Zang Z, Leung
+  VCM, Li SZ. WeightLoop: Weight-Space Programming with Experimental Feedback.
+  arXiv:2611.07319, 2026.
+
+\bibitem{beaker} Nayebi R. Adventures in Weight-Space Programming with Beaker.
+  8 November 2026.
+  \url{https://www.withbeaker.ai/blog/weight-space-programming}. Public run
+  \texttt{3230a4ea}:
+  \url{https://app.withbeaker.ai/public/runs/3230a4ea-512b-4a9f-b42a-4d271cca03fd}.
+
+\bibitem{iwsp} Mehta Y, Singh C, Xu W, Antonello RJ, Flinker A, Mesgarani N,
+  Bonner MF, Jojic N, Gao J. Interpretable weight-space programming builds
+  transparent transformers and brain encoding models. 2026.
+  \url{https://www.alphaxiv.org/abs/2611.interpretable-weight-space-programming}
+
+\bibitem{deletion} Lu J, Yang Z, Lasby M, Pote T, Ioannou Y, Ren M. The
+  Surprising Effectiveness of Deleting Weights in LLM Post-Training.
+  arXiv:2611.10866, NeurIPS 2026.
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,106 @@
+{
+  "mir_version": "1",
+  "manifest_hash": "sha256:51c4d15ab06179fa080b34c3215cbe9d7a3fb3c5e9fcc2a82ee676dfab62055e",
+  "base": {
+    "hash": "sha256:342cc731f556b0d46693d44c1da010a98497e6c5c5aa9f63e12063c0372b47b5",
+    "location": "examples/patch/base.wpp-array.json",
+    "license": "example-only"
+  },
+  "intervention": {
+    "type": "weights",
+    "payload_hash": "sha256:fce7daeec570baac2725ab40b2624ef3e111761ff90facacad4de6293b1bf758"
+  },
+  "claimant": {
+    "operator": "operator-a",
+    "funding_source": "example-fund-a"
+  },
+  "claim": {
+    "behavior": "mean_tokens",
+    "distribution": "instruct-set",
+    "direction": "decrease",
+    "threshold": 0.9,
+    "scoring_metrics": [
+      "mean_tokens"
+    ]
+  },
+  "falsifier": {
+    "command": "python3 examples/falsify_example.py examples/patch/record-b.json",
+    "returns": "boolean"
+  },
+  "invariants": [
+    {
+      "property": "mean_tokens",
+      "measurement": "instruct-set/mean-tokens",
+      "metric": "mean_tokens",
+      "direction": "delta",
+      "bound": 0.1
+    },
+    {
+      "property": "math_accuracy",
+      "measurement": "math500/exact",
+      "metric": "math_accuracy",
+      "direction": "floor",
+      "bound": 0.5
+    },
+    {
+      "property": "gsm8k_accuracy",
+      "measurement": "gsm8k/exact",
+      "metric": "gsm8k_accuracy",
+      "direction": "floor",
+      "bound": 0.3
+    },
+    {
+      "property": "format",
+      "measurement": "leading-token-check",
+      "metric": "format",
+      "direction": "ceiling",
+      "bound": 0.0
+    }
+  ],
+  "harness": {
+    "hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+    "location": "examples/harness"
+  },
+  "runs": [
+    {
+      "operator": "operator-b",
+      "funding_source": "example-fund-b",
+      "cost": 4.0,
+      "wall_time_s": 14400.0,
+      "started_at": "2026-11-18T00:00:00Z",
+      "result": {
+        "n_units": 500,
+        "samples_per_unit": 4,
+        "mean_tokens": 0.62,
+        "math_accuracy": 0.78,
+        "gsm8k_accuracy": 0.44
+      },
+      "harness_hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+      "base_hash": "sha256:342cc731f556b0d46693d44c1da010a98497e6c5c5aa9f63e12063c0372b47b5",
+      "intervention_hash": "sha256:fce7daeec570baac2725ab40b2624ef3e111761ff90facacad4de6293b1bf758"
+    },
+    {
+      "operator": "operator-c",
+      "funding_source": "example-fund-c",
+      "cost": 3.0,
+      "wall_time_s": 12600.0,
+      "started_at": "2026-11-19T00:00:00Z",
+      "result": {
+        "n_units": 500,
+        "samples_per_unit": 4,
+        "mean_tokens": 0.63,
+        "math_accuracy": 0.79,
+        "gsm8k_accuracy": 0.45
+      },
+      "harness_hash": "sha256:9cef3828bbb16da7d1296edd8d8ce6d2cd54107d5437d7af8496c65a12873f34",
+      "base_hash": "sha256:342cc731f556b0d46693d44c1da010a98497e6c5c5aa9f63e12063c0372b47b5",
+      "intervention_hash": "sha256:fce7daeec570baac2725ab40b2624ef3e111761ff90facacad4de6293b1bf758"
+    }
+  ],
+  "lineage": [
+    "sha256:040d943bb251f48dddb4af9d44c4c54e80b4f980db835afe9c31bf0f81b0e72f"
+  ],
+  "supersedes": null,
+  "status": "replicated",
+  "id": "sha256:ce7aa10afbb62e6ccfba574647294dbdd2f8877315e9beba2fce8b1ba875ff29"
+}

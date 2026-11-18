@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Intervention Records — a conformance test for weight-space claims</title>
+<meta name="description" content="MIR-1 is a record format and a mechanical conformance test for claims that an intervention changed a language model's behavior: an executable falsifier, invariants outside the claimed score, and content-addressed lineage. Two implementations, Python and Go, agree byte for byte.">
+<link rel="canonical" href="https://mir-1-wsp.github.io/model-intervention-records/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Model Intervention Records">
+<meta property="og:description" content="A conformance test for weight-space claims. Eleven verdicts, no aggregate score.">
+<meta property="og:url" content="https://mir-1-wsp.github.io/model-intervention-records/">
+<meta name="twitter:card" content="summary">
+<!-- Highwire tags: what Google Scholar reads to build a citation record. -->
+<meta name="citation_title" content="Model Intervention Records: A Conformance Test for Weight-Space Claims">
+<meta name="citation_author" content="MIR-1 contributors">
+<meta name="citation_publication_date" content="2026/11/18">
+<meta name="citation_pdf_url" content="https://mir-1-wsp.github.io/model-intervention-records/MIR/paper/mir-1.pdf">
+<meta name="citation_abstract_html_url" content="https://mir-1-wsp.github.io/model-intervention-records/">
+<meta name="citation_language" content="en">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem;
+         font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  h1 { font-size: 1.7rem; line-height: 1.25; margin-bottom: .25rem; }
+  .sub { color: #666; margin-top: 0; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+  pre { overflow-x: auto; padding: .8rem 1rem; background: #f4f4f4; border-radius: 6px; }
+  @media (prefers-color-scheme: dark) { pre { background: #1e1e1e; } .sub { color: #aaa; } }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #ddd; vertical-align: top; }
+  footer { margin-top: 3rem; color: #666; font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<h1>Model Intervention Records</h1>
+<p class="sub">A conformance test for claims made in weight-space programming.</p>
+
+<p>Claims that an intervention changed a model's behavior are not comparable.
+Two reports can both be accurate and still disagree about what happened, because
+neither record states what was required not to change. MIR-1 specifies the
+fields such a claim must carry, and a mechanical test anyone may run on them
+without permission: an executable falsifier, an invariant set with at least one
+metric outside the claim's own scoring function, and content-addressed lineage to
+a base checkpoint.</p>
+
+<p>The test reports eleven individual verdicts and no aggregate score. A
+companion extends the <code>weights</code> payload with a composable Weight
+Patch and five further checks; another adds four report-only qualifiers. A
+published intervention is re-recorded as the worked example, and it fails
+exactly one check: no run states a cost.</p>
+
+<table>
+  <tr><th>Read</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1-spec.md">The specification</a></td></tr>
+  <tr><th>Paper</th><td><a href="MIR/paper/mir-1.pdf">10 pages, PDF</a> · <a href="MIR/paper/mir-1.tex">LaTeX source</a></td></tr>
+  <tr><th>Addendum</th><td><a href="MIR/paper/mir-1-addendum.pdf">3 pages, PDF</a> — what changed after version 1.0</td></tr>
+  <tr><th>Patches</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1.1-Patch.md">MIR-1.1 — composable weight interventions</a></td></tr>
+  <tr><th>Qualifiers</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR-1.2-Qualifiers.md">MIR-1.2 — record qualifiers</a></td></tr>
+  <tr><th>Worked example</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/MIR/records/MIR-R1.json">MIR-R1.json</a>, one check failing</td></tr>
+  <tr><th>Source</th><td><a href="https://github.com/MIR-1-WSP/model-intervention-records">github.com/MIR-1-WSP/model-intervention-records</a></td></tr>
+</table>
+
+<h2>Check a record</h2>
+<p>The validator runs on Python 3.8 or later with no third-party dependencies.
+Nothing needs to be installed.</p>
+<pre>git clone https://github.com/MIR-1-WSP/model-intervention-records
+cd model-intervention-records/MIR
+python3 validate.py records/MIR-R1.json
+python3 ci/check.py</pre>
+<p>The first command ends in <code>RESULT: FAIL (1 of 11)</code>: the failure is
+cost disclosure, and it is the paper's subject rather than a defect in the
+example. The second runs every expected answer, including the ones that must
+fail.</p>
+
+<h2>What it does not do</h2>
+<p>It does not verify that a claim is true, and it does not report importance,
+novelty, evaluation quality, operator reputation, model safety, or desirability.
+It checks that a claim is stated in a form another party can check. Invariant
+bounds are declared, not evaluated. Conformance is permissionless: there is no
+certification authority and no mark to license.</p>
+
+<footer>
+  <p>Cite as: MIR-1 contributors, <em>Model Intervention Records: A Conformance
+  Test for Weight-Space Claims</em>, version 1.0, test suite 1.7.0, 2026.
+  <a href="https://github.com/MIR-1-WSP/model-intervention-records/blob/main/CITATION.cff">CITATION.cff</a>.
+  Text CC BY 4.0, code Apache-2.0.</p>
+</footer>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "name": "Model Intervention Records: A Conformance Test for Weight-Space Claims",
+  "abstract": "A record format and a mechanical conformance test for claims that an intervention changed a language model's behavior. A conforming record carries an executable falsifier, an invariant set with at least one metric outside the claim's own scoring function, and content-addressed lineage to a base checkpoint. The test emits eleven individual verdicts and no aggregate score. Two dependency-free implementations, in Python and Go, are written from the same text and agree byte for byte.",
+  "author": { "@type": "Organization", "name": "MIR-1 contributors" },
+  "datePublished": "2026-11-18",
+  "license": ["https://www.apache.org/licenses/LICENSE-2.0", "https://creativecommons.org/licenses/by/4.0/"],
+  "keywords": ["weight-space programming", "model intervention records", "conformance testing", "evaluation validity", "reproducibility"],
+  "codeRepository": "https://github.com/MIR-1-WSP/model-intervention-records",
+  "url": "https://mir-1-wsp.github.io/model-intervention-records/"
+}
+</script>
+</body>
+</html>

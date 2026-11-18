@@ -1,0 +1,13 @@
+{
+  "wpp_array_version": "0.1",
+  "tensors": {
+    "w": {
+      "shape": [
+        2,
+        3
+      ],
+      "dtype": "float32",
+      "data_b64": "AACAPwAAAEAAAEBAAACAQAAAoEAAAMBA"
+    }
+  }
+}

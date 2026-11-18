@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.invalid/mir-1/schema.json",
+  "title": "MIR-1 Model Intervention Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mir_version", "manifest_hash", "base", "intervention", "claimant", "claim",
+    "falsifier", "invariants", "harness", "runs", "lineage", "status"
+  ],
+  "properties": {
+    "mir_version": { "const": "1" },
+    "manifest_hash": { "$ref": "#/definitions/hash" },
+    "id": { "$ref": "#/definitions/hash" },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash", "location", "license"],
+      "properties": {
+        "hash": { "$ref": "#/definitions/hash" },
+        "location": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 }
+      }
+    },
+    "intervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "payload_hash"],
+      "properties": {
+        "type": { "enum": ["weights", "vector", "harness", "other"] },
+        "payload_hash": { "$ref": "#/definitions/hash" },
+        "description": { "type": "string" }
+      }
+    },
+    "claimant": {
+      "description": "The entity asserting the claim. Independence of a replication is measured against this record, not against whoever happened to run first.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operator", "funding_source"],
+      "properties": {
+        "operator": { "type": "string", "minLength": 1 },
+        "funding_source": {
+          "description": "A value such as 'not disclosed' is not a source: independence cannot be established against it.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["behavior", "distribution", "direction", "threshold", "scoring_metrics"],
+      "properties": {
+        "behavior": { "type": "string", "minLength": 1 },
+        "distribution": { "type": "string", "minLength": 1 },
+        "direction": { "enum": ["increase", "decrease"] },
+        "threshold": { "type": "number" },
+        "scoring_metrics": {
+          "description": "Every metric the claim's scoring function observes. behavior MUST appear here; an invariant whose metric appears here is inside the scoring function.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "falsifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "returns"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "returns": { "const": "boolean" }
+      }
+    },
+    "invariants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["property", "measurement", "metric", "direction", "bound"],
+        "properties": {
+          "property": { "type": "string", "minLength": 1 },
+          "measurement": { "type": "string", "minLength": 1 },
+          "metric": {
+            "description": "The metric this bound applies to. Compared against claim.scoring_metrics to decide whether the invariant is inside or outside the scoring function.",
+            "type": "string",
+            "minLength": 1
+          },
+          "direction": {
+            "description": "floor: value >= bound. ceiling: value <= bound. delta: bound applies to the signed change from the base run; the sign of the bound states the permitted side.",
+            "enum": ["floor", "ceiling", "delta"]
+          },
+          "bound": { "type": "number" }
+        }
+      }
+    },
+    "harness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash", "location"],
+      "properties": {
+        "hash": { "$ref": "#/definitions/hash" },
+        "location": { "type": "string", "minLength": 1 }
+      }
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operator", "funding_source", "cost", "wall_time_s",
+          "started_at", "harness_hash", "base_hash", "intervention_hash", "result"
+        ],
+        "properties": {
+          "operator": { "type": "string", "minLength": 1 },
+          "funding_source": { "type": "string", "minLength": 1 },
+          "cost": {
+            "description": "null means explicitly undisclosed, which fails C-07",
+            "oneOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }]
+          },
+          "wall_time_s": {
+            "description": "null means explicitly undisclosed, which fails C-07. A run that produced a result took time, so zero is not a duration.",
+            "oneOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "type": "null" }]
+          },
+          "started_at": { "type": "string", "minLength": 1 },
+          "harness_hash": { "$ref": "#/definitions/hash" },
+          "base_hash": { "$ref": "#/definitions/hash" },
+          "intervention_hash": {
+            "description": "null declares a baseline run: no intervention applied",
+            "oneOf": [{ "$ref": "#/definitions/hash" }, { "type": "null" }]
+          },
+          "result": {
+            "type": "object",
+            "required": ["n_units", "samples_per_unit"],
+            "properties": {
+              "n_units": { "type": "integer", "minimum": 1 },
+              "samples_per_unit": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "lineage": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/hash" }
+    },
+    "supersedes": { "oneOf": [{ "$ref": "#/definitions/hash" }, { "type": "null" }] },
+    "status": {
+      "description": "draft: unfinished. submitted: claim published, lineage resolves. replicated: C-10 satisfied. orphan: lineage does not resolve. A challenge, a refutation, and an expiry are registry events, not record fields; see section 11.",
+      "enum": ["draft", "submitted", "replicated", "orphan"]
+    }
+  },
+  "definitions": {
+    "hash": {
+      "type": "string",
+      "pattern": "^(sha256:)?[0-9a-fA-F]{64}$"
+    }
+  }
+}
